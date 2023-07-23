@@ -2,8 +2,10 @@
 import gradio as gr
 import os
 import sys
+from pathlib import Path
 
-sys.path.append("../pop2piano")
+dir_thisfile: Path = Path(__file__).resolve().parent
+sys.path.append((dir_thisfile / "../pop2piano").as_posix())
 import glob
 import random
 
@@ -27,10 +29,11 @@ from preprocess.beat_quantizer import extract_rhythm, interpolate_beat_times
 
 # set config
 device = "cuda" if torch.cuda.is_available() else "cpu"
-config = OmegaConf.load("../pop2piano/config.yaml")
+config = OmegaConf.load((dir_thisfile / "../pop2piano/config.yaml").as_posix())
 wrapper = TransformerWrapper(config)
 wrapper = wrapper.load_from_checkpoint(
-    "../models/model-1999-val_0.67311615.ckpt", config=config
+    (dir_thisfile / "../models/model-1999-val_0.67311615.ckpt").as_posix(),
+    config=config,
 ).to(device)
 model = "dpipqxiy"
 wrapper.eval()
@@ -68,7 +71,7 @@ def dummy_function(composer: str, audio: str) -> str:
     return "Composer: " + composer + " Audio: " + audio
 
 
-def generate_midi(composer: str, audio: str) -> tuple[str, str,str]:
+def generate_midi(composer: str, audio: str) -> tuple[str, str, str]:
     pm, composer, mix_path, midi_path = wrapper.generate(
         audio_path=audio,
         composer=composer,
@@ -84,15 +87,22 @@ def generate_midi(composer: str, audio: str) -> tuple[str, str,str]:
 demo = gr.Interface(
     fn=generate_midi,
     inputs=[
-        gr.Dropdown(choices=composer_list, value="composer1", label="Select Composer",),
+        gr.Dropdown(
+            choices=composer_list,
+            value="composer1",
+            label="Select Composer",
+        ),
         gr.Audio(type="filepath", label="Upload Audio", source="upload"),
     ],
-    outputs=[gr.Audio(label="Audio Preview"),
-             gr.File(label="Download Audio"),
-             gr.File(label="Download Midi")],
+    outputs=[
+        gr.Audio(label="Audio Preview"),
+        gr.File(label="Download Audio"),
+        gr.File(label="Download Midi"),
+    ],
     title="Pop2Piano Web UI",
     description="This is a web interface for Pop2Piano.",
-    theme="gradio/soft"
+    theme="gradio/soft",
+    allow_flagging=False,
 )
 
 # launch interface
