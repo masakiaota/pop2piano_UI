@@ -13,3 +13,4 @@ __pycache__
 *.wav
 *.mp3
 .ipynb_checkpoints
+.vscode/settings.json
